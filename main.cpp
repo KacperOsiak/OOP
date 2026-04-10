@@ -59,14 +59,16 @@ class Product {
     private:
         string name;
         double price;
-        Category category;
-        Supplier supplier;
+        Category* category;
+        Supplier* supplier;
     public:
         Product(string n = "none", double p = 0.0){
             name = n;
             price = p;
+            category = nullptr;
+            supplier = nullptr;
         }
-        void setDetails(Category c, Supplier s){
+        void setDetails(Category* c, Supplier* s){
             category = c;
             supplier = s;
         }
@@ -74,8 +76,15 @@ class Product {
             price = p;
         }
         void showProduct() {
-            cout <<"Product: "<<name<<" ["<<category.getCategory()<<"] by "<< supplier.getSupplier()<<" - $"<<price<<endl;
+        cout << "Product: " << name;
+        if (category != nullptr) {
+            cout << " [" << category->getCategory() << "]";
         }
+        if (supplier != nullptr) {
+            cout << " by " << supplier->getSupplier();
+        }
+        cout << " - $" << price << endl;
+    }
 };
 
 class Review{
@@ -110,6 +119,7 @@ class Order{
         }
 };
 
+//Stałe zniżki przyznawane klientom. Np 10%,25% dla nowych klientów (plan przyszlościowy)
 class DiscountCard {
 private:
     int discount_percent;
@@ -127,26 +137,47 @@ public:
 
 class Customer{
     private:
-        User profile;
-        Address shipping_info;
-        Order current_order;
-        DiscountCard card;
+        User* profile;
+        Address* shipping_info;
+        Order* current_order;
+        DiscountCard* card;
     public:
-        Customer(User u, Address a){
+        Customer(User* u, Address* a){
+            if (u == nullptr || a == nullptr) {
+                cout << "ERROR: Cannot create Customer without User or Address!" << endl;
+            }
             profile = u;
             shipping_info = a;
+            current_order = nullptr;
+            card = nullptr;
         }
-        void assignOrder(Order o){
+        ~Customer(){
+            if (current_order != nullptr) {
+            delete current_order; 
+            cout << "Order deleted automatically with Customer." << endl;
+            }
+        }
+        void assignOrder(Order* o){
             current_order = o;
         }
-        void giveCard(DiscountCard c){
+        void giveCard(DiscountCard* c){
             card = c;
         }
         void showInfo(){
-            cout <<"Customer: " <<profile.getName()<<endl;
-            cout <<"Address: " <<shipping_info.getFullAddress()<<endl;
-            cout <<"Active: " <<current_order.getOrderInfo()<<endl;
-            cout <<"Discount: "<<card.getDiscount()<<"%"<< endl;
+            cout <<"Customer: " <<profile->getName()<<endl;
+            cout <<"Address: " <<shipping_info->getFullAddress()<<endl;
+            // Musimy sprawdzać, czy wskaźniki nie są puste (nullptr) zakładając, że profile i shipping info != nullptr
+            if (current_order != nullptr) {
+                cout << "Active: " << current_order->getOrderInfo() << endl;
+            } else {
+                cout << "Active: No current order" << endl;
+            }
+
+            if (card != nullptr) {
+                cout << "Discount: " << card->getDiscount() << "%" << endl;
+            } else {
+                cout << "Discount: No discount card" << endl;
+            }
         }
 };
 
@@ -173,40 +204,42 @@ public:
 
 int main() {
     //Przygotowanie podstawowych informacji
-    Address myAddr;
-    myAddr.setAddress("Warsaw", "Lipowa 12");
+    Address* myAddr = new Address();
+    myAddr->setAddress("Warsaw", "Lipowa 12");
 
-    User myUser("Kacper");
+    User* myUser = new User("Kacper");
 
-    Category myCat;
-    myCat.setCategory("Electronics");
+    Category* myCat = new Category();
+    myCat->setCategory("Electronics");
 
-    Supplier mySup;
-    mySup.setSupplier("Asus");
+    Supplier* mySup = new Supplier;
+    mySup->setSupplier("Asus");
 
     //Tworzenie produktu i zmiana jego ceny 
-    Product myProd("Gaming Laptop", 1500.0);
-    myProd.setDetails(myCat, mySup);
-    myProd.showProduct();
-    myProd.changePrice(1399.99); 
-    myProd.showProduct();
+    Product* myProd = new Product("Gaming Laptop", 1500.0);
+    //przekazujemy adresy (wskaźniki) do metody 
+    myProd->setDetails(myCat, mySup);
+    myProd->showProduct();
+    myProd->changePrice(1399.99); 
+    myProd->showProduct();
     cout<<endl;
 
     //Dodanie opinii
-    Review myRev;
-    myRev.addReview(5, "Fast and reliable, worth every penny!");
+    Review* myRev = new Review;
+    myRev->addReview(5, "Fast and reliable, worth every penny!");
 
     //Obsługa zamówienia i karty rabatowej
-    Order myOrder(1001, "Pending");
-    myOrder.setStatus("In Delivery"); 
+    Order* myOrder = new Order(1001, "Pending");
+    myOrder->setStatus("In Delivery"); 
 
-    DiscountCard myCard;
-    myCard.setDiscount(10); //10 procent rabatu
+    DiscountCard* basicPercDiscount = new DiscountCard();
+    DiscountCard* tenPercDiscount = new DiscountCard(10);// wielu klientow moze zyskac 10 procent
+    
 
     //Łączenie wszystkiego w obiekcie Customer
-    Customer myCust(myUser, myAddr);
-    myCust.assignOrder(myOrder); //Klient otrzymuje zamówienie
-    myCust.giveCard(myCard);     
+    Customer* myCust = new Customer(myUser, myAddr);
+    myCust->assignOrder(myOrder); //Klient otrzymuje zamówienie
+    myCust->giveCard(tenPercDiscount);     
 
     //Zarządzanie sklepem
     Store myStore("Allegro");
@@ -221,8 +254,19 @@ int main() {
     cout<<endl;
 
     //Wyświetlenie pełnych informacji o kliencie
-    myCust.showInfo();
-    myRev.showReview();
+    myCust->showInfo();
+    myRev->showReview();
+
+    cout<<"\nCleaning up memory..."<<endl;
+    delete myCust;
+    delete myProd;
+    delete mySup;
+    delete myCat;
+    delete myUser;
+    delete myAddr;
+    delete basicPercDiscount;
+    delete tenPercDiscount;
+    delete myRev;
 
     return 0;
 }
