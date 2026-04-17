@@ -3,6 +3,18 @@
 
 using namespace std;
 
+class Address; 
+class Review; 
+class DiscountCard; 
+class User; 
+class Order;
+
+void compareCities(const Address& a1, const Address& a2);
+bool isTopRated(const Review& r);
+void adminResetDiscount(DiscountCard& dc);
+void printSensitiveData(const User& u);
+void forceOrderStatus(Order& o, string newStatus);
+
 class Address{
     private:
         string city;
@@ -12,6 +24,9 @@ class Address{
             this->city = city;
             this->street = street;
         }
+
+        friend class Customer;
+        friend void compareCities(const Address& a1, const Address& a2);
 
         string getCity() const {return this->city;}
         string getStreet() const {return this->street;}
@@ -35,6 +50,9 @@ class User{
             this->email = email;
         }
 
+        friend class Customer;
+        friend void printSensitiveData(const User& u);
+
         string getName() const {return this->name;}
         string getEmail() const {return this->email;}
 
@@ -56,6 +74,8 @@ class Category{
             this->description = description;
         }
         
+        friend class Product;
+
         string getName() const {return this->name;}
         string getDescription() const {return this->description;}
 
@@ -76,6 +96,8 @@ class Supplier {
             this->name = name;
             this->country = country;
         }
+
+        friend class Product;
 
         string getName() const {return this->name;}
         string getCountry() const {return this->country;}
@@ -108,6 +130,8 @@ class Product {
             this->category = nullptr;
             this->supplier = nullptr;
         }
+
+        friend class Store;
         
         string getName() const {return this->name;}
         double getPrice() const {return this->price;}
@@ -134,6 +158,9 @@ class Review{
             setRating(rating);
             this->comment = comment;
         }
+
+        friend bool isTopRated(const Review& r);
+
         int getRating() const {return this->rating;}
         string getComment() const {return this->comment;}
 
@@ -165,6 +192,10 @@ class Order{
             this->id = id;
             this->status = status;
         }
+
+        friend class Customer;
+        friend void forceOrderStatus(Order& o, string newStatus);
+
         int getID() const {return this->id;}
         string getStatus() const {return this->status;}
         string getInfo() const {
@@ -193,6 +224,9 @@ public:
     DiscountCard(int discount=0){
         setDiscount(discount);
     }
+
+    friend class Customer;
+    friend void adminResetDiscount(DiscountCard& dc);
 
     void setDiscount(int discount){
         if(discount < 0){
@@ -243,12 +277,13 @@ public:
 
 
     void processPayment(double totalAmount) const {
-        cout << "[Platnosc]: Przetwarzanie dla " << this->profile->getName() << endl;
-        if (this->card != nullptr) {
-            double finalPrice = this->card->calculateDiscountedPrice(totalAmount);
-            cout << " -> Cena po rabacie: $" << finalPrice << endl;
-        } else {
-            cout << " -> Cena bez rabatu: $" << totalAmount << endl;
+        //BEZPOŚREDNIO do profile->name(przyjźń)
+        cout << "Przetwarzanie dla: " << profile->name << endl; 
+
+        if(card != nullptr) {
+            // Zamiast calculateDiscountedPrice(), card->discount
+            double finalPrice = card->calculateDiscountedPrice(totalAmount);
+            cout<<"Cena po rabacie: PLN" << finalPrice << endl;
         }
     }
 
@@ -290,6 +325,71 @@ public:
     }
 };
 
+void compareCities(const Address& a1, const Address& a2) {
+    if(a1.city == a2.city) cout <<"Ta sama lokalizacja." << endl;
+    else cout << "Rozne miasta." << endl;
+}
+
+bool isTopRated(const Review& r) {
+    return r.rating == 5; 
+}
+
+void adminResetDiscount(DiscountCard& dc) {
+    dc.discount = 0; 
+}
+
+void printSensitiveData(const User& u) {
+    cout << "[Admin Log]: User " << u.name << " (Email: " << u.email << ")" << endl;
+}
+
+void forceOrderStatus(Order& o, string newStatus) {
+    o.status = newStatus; //nadpisanie statusu
+}
+
 int main() {
+    //Stworzenie sklepu i powitanie
+    Store myStore("Allegro Lokalnie", true);
+    myStore.mainPage();
+
+    //Przygotowanie danych
+    User* u = new User("Kacper", "kacper@mail.pl");
+    Address* a1 = new Address("Bydgoszcz", "Dluga 10");
+    Address* a2 = new Address("Bydgoszcz", "Krotka 2"); // drugi adres do porownania
+    
+    Customer* cust = new Customer(u, a1);
+    DiscountCard* card = new DiscountCard(20);
+    Order* ord = new Order(123, "Pending");
+    
+    cust->setCard(card);
+    cust->setCurrentOrder(ord);
+
+    //Testowanie 5 funkcji zaprzyjaznionych
+    cout<<"\n--- TEST 5 FUNKCJI ZAPRZYJAZNIONYCH ---"<<endl;
+    
+    //Funkcja 1: Porównanie miast 
+    compareCities(*a1, *a2); 
+
+    //Funkcja 2: Sprawdzenie czy opinia jest TOP 
+    Review rev(5, "Bardzo polecam!");
+    if(isTopRated(rev)) cout<<"Opinia zweryfikowana jako: TOP RATED"<<endl;
+
+    //Funkcja 3: Logi admina (dostęp do u.name i u.email)
+    printSensitiveData(*u);
+
+    //Funkcja 4: Reset rabatu przez admina (bezpośrednia zmiana dc.discount)
+    adminResetDiscount(*card);
+    cout<<"Rabat po interwencji admina: "<<card->getDiscount()<<"%"<<endl;
+
+    //Funkcja 5: Wymuszenie statusu zamówienia (zmiana o.status)
+    forceOrderStatus(*ord, "CANCELED_BY_ADMIN");
+    cout<<"Status zamowienia po wymuszeniu: " << ord->getStatus() << endl;
+
+    //4.Test Friend Class (Dostęp wewnatrz Customera)
+    cust->processPayment(200);
+
+    //sprzatanie
+    delete cust; // To usunie profil, adres, zamowienie i karte
+    delete a2;   // Ten adres nie byl w Customerze, usuwamy go osobno
+
     return 0;
 }
