@@ -8,50 +8,90 @@ class Address{
         string city;
         string street;
     public:
-        void setAddress(string c, string s){
-            city = c;
-            street = s;
+        Address(string city, string street){
+            this->city = city;
+            this->street = street;
         }
 
-        string getFullAddress(){
-            string full_address = street + "," + city;
-            return full_address;
+        string getCity() const {return this->city;}
+        string getStreet() const {return this->street;}
+        string getAddress() const {return this->street + "," + this->city;}
+
+        void setCity(string city){this->city = city;}
+        void setStreet(string street){this->street = street;}
+
+        ~Address(){
+            cout<<"[Destruktor]: Usunieto adres: "<<this->city<<", "<<this->street<<endl;
         }
 };
 
 class User{
     private:
-        string username;
+        string name;
+        string email;
     public:
-        User(string u="guest"){
-            username = u;
+        User(string name="guest", string email="not_provided"){
+            this->name = name;
+            this->email = email;
         }
-        string getName(){
-            return username;
+
+        string getName() const {return this->name;}
+        string getEmail() const {return this->email;}
+
+        void setName(string name){this->name = name;}
+        void setEmail(string email){this->email = email;}
+
+        ~User(){
+            cout<<"[Destruktor]: Usunieto profil uzytkownika: "<<this->name<<endl;
         }
 };
 
 class Category{
     private:
-        string category_name;
+        string name;
+        string description;
     public:
-        void setCategory(string n){
-            category_name = n;
+        Category(string name, string description="empty"){
+            this->name = name;
+            this->description = description;
         }
-        string getCategory(){
-            return category_name;
+        
+        string getName() const {return this->name;}
+        string getDescription() const {return this->description;}
+
+        void setName(string name){this->name = name;}
+        void setDescription(string description){this->description = description;}
+
+        ~Category(){
+            cout<<"[Destruktor]: Usunieto kategorie: "<<this->name<<endl;
         }
 };
 
 class Supplier {
     private:
-        string company_name;
+        string name;
+        string country;
     public:
-        void setSupplier(string n){
-            company_name = n; 
+        Supplier(string name, string country="Poland"){
+            this->name = name;
+            this->country = country;
         }
-        string getSupplier(){
-            return company_name;
+
+        string getName() const {return this->name;}
+        string getCountry() const {return this->country;}
+
+        void setName(string name){this->name = name;}
+        void setCountry(string country){this->country = country;}
+
+        bool isForeignSupplier() const {
+            if(this->country != "Poland"){
+                return true;
+            }
+            return false;
+        }
+        
+        ~Supplier(){
+            cout<<"[Destruktor]: Usunieto dostawce: "<<this->name<<endl;
         }
 };
 
@@ -62,42 +102,57 @@ class Product {
         Category* category;
         Supplier* supplier;
     public:
-        Product(string n = "none", double p = 0.0){
-            name = n;
-            price = p;
-            category = nullptr;
-            supplier = nullptr;
+        Product(string name = "none", double price = 0.0){
+            this->name = name;
+            this->price = price;
+            this->category = nullptr;
+            this->supplier = nullptr;
         }
-        void setDetails(Category* c, Supplier* s){
-            category = c;
-            supplier = s;
+        
+        string getName() const {return this->name;}
+        double getPrice() const {return this->price;}
+        Category* getCategory() const {return this->category;}
+        Supplier* getSupplier() const {return this->supplier;}
+
+        void setName(string name){this->name = name;}
+        void setPrice(double price){this->price = price;}
+        void setCategory(Category* category){this->category = category;}
+        void setSupplier(Supplier* supplier){this->supplier = supplier;}
+
+        ~Product(){
+            cout<<"[Destruktor]: Usunieto produkt: "<<this->name<<endl;
         }
-        void changePrice(double p){
-            price = p;
-        }
-        void showProduct() {
-        cout << "Product: " << name;
-        if (category != nullptr) {
-            cout << " [" << category->getCategory() << "]";
-        }
-        if (supplier != nullptr) {
-            cout << " by " << supplier->getSupplier();
-        }
-        cout << " - $" << price << endl;
-    }
 };
 
 class Review{
     private:
         int rating;
         string comment;
+        const int MAX_RATING = 5;
     public:
-        void addReview(int r, string c){
-            rating = r;
-            comment = c;
+        Review(int rating, string comment="-"){
+            setRating(rating);
+            this->comment = comment;
         }
-        void showReview(){
-            cout<<"Review: "<<rating<<"/5 - "<<comment<<endl;
+        int getRating() const {return this->rating;}
+        string getComment() const {return this->comment;}
+
+        void setRating(int rating) {
+            if(rating > MAX_RATING){
+                this->rating = MAX_RATING; 
+            }else if(rating < 1){
+                this->rating = 1; 
+            }else{
+                this->rating = rating;
+            }
+        }
+        void setComment(string comment){this->comment = comment;}
+
+        void showReview() const {
+            cout<<"Review: "<<this->rating<<"/5 - "<<this->comment<<endl;
+        }
+        ~Review(){
+            cout<<"[Destruktor]: Usunieto opinie"<<endl;
         }
 };
 
@@ -106,167 +161,135 @@ class Order{
         int id;
         string status;
     public:
-        Order(int i=0, string s="none"){
-            id = i;
-            status = s;
+        Order(int id=0, string status="pending"){
+            this->id = id;
+            this->status = status;
         }
-        void setStatus(string s){
-            status = s;
-        }
-       
-        string getOrderInfo(){
+        int getID() const {return this->id;}
+        string getStatus() const {return this->status;}
+        string getInfo() const {
             return "Order [" + to_string(id) +"]"  + " Status: " + status;
         }
+
+        void setStatus(string status){this->status = status;}
+
+        bool isSent() const {
+        if(this->status == "Shipped" || this->status == "Delivered"){
+            return true;
+        }
+        return false;
+        }
+
+        ~Order(){
+            cout<<"[Destruktor]: Usunieto zamowienie nr: "<<this->id<<endl;
+        }
+
 };
 
-//Stałe zniżki przyznawane klientom. Np 10%,25% dla nowych klientów (plan przyszlościowy)
 class DiscountCard {
 private:
-    int discount_percent;
+    int discount;
 public:
-    DiscountCard(int d=0){
-        discount_percent = d;
+    DiscountCard(int discount=0){
+        setDiscount(discount);
     }
-    void setDiscount(int p){
-        discount_percent = p;
+
+    void setDiscount(int discount){
+        if(discount < 0){
+            this->discount = 0;
+        }else if(discount > 100){
+            this->discount = 100;
+        }else{
+            this->discount = discount;
+        }
     }
-    int getDiscount(){
-        return discount_percent;
+    
+    int getDiscount() const {return this->discount;}
+
+    double calculateDiscountedPrice(double original_price) const {
+        double multiplier = (100.0 - this->discount) / 100.0;
+        return original_price * multiplier;
     }
+
+    ~DiscountCard(){
+            cout<<"[Destruktor]: Karta rabatowa o ("<<this->discount<<"%) została usunieta"<<endl;
+        }
 };
 
-class Customer{
-    private:
-        User* profile;
-        Address* shipping_info;
-        Order* current_order;
-        DiscountCard* card;
-    public:
-        Customer(User* u, Address* a){
-            if (u == nullptr || a == nullptr) {
-                cout << "ERROR: Cannot create Customer without User or Address!" << endl;
-            }
-            profile = u;
-            shipping_info = a;
-            current_order = nullptr;
-            card = nullptr;
-        }
-        ~Customer(){
-            if (current_order != nullptr) {
-            delete current_order; 
-            cout << "Order deleted automatically with Customer." << endl;
-            }
-        }
-        void assignOrder(Order* o){
-            current_order = o;
-        }
-        void giveCard(DiscountCard* c){
-            card = c;
-        }
-        void showInfo(){
-            cout <<"Customer: " <<profile->getName()<<endl;
-            cout <<"Address: " <<shipping_info->getFullAddress()<<endl;
-            // Musimy sprawdzać, czy wskaźniki nie są puste (nullptr) zakładając, że profile i shipping info != nullptr
-            if (current_order != nullptr) {
-                cout << "Active: " << current_order->getOrderInfo() << endl;
-            } else {
-                cout << "Active: No current order" << endl;
-            }
+class Customer {
+private:
+    User* profile;
+    Address* shipping_info;
+    Order* current_order;
+    DiscountCard* card;
 
-            if (card != nullptr) {
-                cout << "Discount: " << card->getDiscount() << "%" << endl;
-            } else {
-                cout << "Discount: No discount card" << endl;
-            }
+public:
+    Customer(User* profile, Address* shipping_info) {
+        this->profile = profile;
+        this->shipping_info = shipping_info;
+        this->current_order = nullptr;
+        this->card = nullptr;
+    }
+
+    User* getProfile() const { return this->profile; }
+    Address* getShippingInfo() const { return this->shipping_info; }
+    Order* getCurrentOrder() const { return this->current_order; }
+    DiscountCard* getCard() const { return this->card; }
+
+    void setProfile(User* profile) { this->profile = profile; }
+    void setShippingInfo(Address* shipping_info) { this->shipping_info = shipping_info; }
+    void setCurrentOrder(Order* current_order) { this->current_order = current_order; }
+    void setCard(DiscountCard* card) { this->card = card; }
+
+
+    void processPayment(double totalAmount) const {
+        cout << "[Platnosc]: Przetwarzanie dla " << this->profile->getName() << endl;
+        if (this->card != nullptr) {
+            double finalPrice = this->card->calculateDiscountedPrice(totalAmount);
+            cout << " -> Cena po rabacie: $" << finalPrice << endl;
+        } else {
+            cout << " -> Cena bez rabatu: $" << totalAmount << endl;
         }
+    }
+
+    ~Customer() {
+        cout << "\n[Destruktor Customer]: Usuwanie obiektow zaleznych..." << endl;
+        if (this->profile != nullptr) delete this->profile;
+        if (this->shipping_info != nullptr) delete this->shipping_info;
+        if (this->current_order != nullptr) delete this->current_order;
+        if (this->card != nullptr) delete this->card;
+    }
 };
 
 class Store {
 private:
-    string store_name;
+    string name;
     bool is_open;
 public:
-    Store(string n){
-        store_name = n;
-        is_open = false;
+    Store(string name, bool is_open = true){
+        this->name = name;
+        this->is_open = is_open;
     }
-    void openStore(){
-        is_open = true;
-    }
-    void welcome() {
-        string temp = "CLOSED";
-        if(is_open){
-            temp = "OPEN";
+
+    string getName() const {return this->name;}
+    bool getIsOpen() const {return this->is_open;}
+
+    void setName(string name){this->name = name;}
+    void setIsOpen(bool is_open){this->is_open = is_open;}
+
+    void mainPage() {
+        if(this->is_open){
+            cout<<"Nasz sklep jest otwarty zapraszamy!"<<endl;
+        }else{
+            cout<<"Niesety jestesmy zamknieci :("<<endl;
         }
-        cout<<"Welcome to "<<store_name<<" we are currently "<<temp<<endl;
+    }
+
+    ~Store() {
+        cout<<"[Destruktor]: Zamykanie systemu sklepu " << this->name<< endl;
     }
 };
 
 int main() {
-    //Przygotowanie podstawowych informacji
-    Address* myAddr = new Address();
-    myAddr->setAddress("Warsaw", "Lipowa 12");
-
-    User* myUser = new User("Kacper");
-
-    Category* myCat = new Category();
-    myCat->setCategory("Electronics");
-
-    Supplier* mySup = new Supplier;
-    mySup->setSupplier("Asus");
-
-    //Tworzenie produktu i zmiana jego ceny 
-    Product* myProd = new Product("Gaming Laptop", 1500.0);
-    //przekazujemy adresy (wskaźniki) do metody 
-    myProd->setDetails(myCat, mySup);
-    myProd->showProduct();
-    myProd->changePrice(1399.99); 
-    myProd->showProduct();
-    cout<<endl;
-
-    //Dodanie opinii
-    Review* myRev = new Review;
-    myRev->addReview(5, "Fast and reliable, worth every penny!");
-
-    //Obsługa zamówienia i karty rabatowej
-    Order* myOrder = new Order(1001, "Pending");
-    myOrder->setStatus("In Delivery"); 
-
-    DiscountCard* basicPercDiscount = new DiscountCard();
-    DiscountCard* tenPercDiscount = new DiscountCard(10);// wielu klientow moze zyskac 10 procent
-    
-
-    //Łączenie wszystkiego w obiekcie Customer
-    Customer* myCust = new Customer(myUser, myAddr);
-    myCust->assignOrder(myOrder); //Klient otrzymuje zamówienie
-    myCust->giveCard(tenPercDiscount);     
-
-    //Zarządzanie sklepem
-    Store myStore("Allegro");
-    
-    //Sprawdzamy stan przed otwarciem
-    myStore.welcome(); 
-    
-    myStore.openStore(); //Otwieramy sklep
-    
-    //Sprawdzamy stan po otwarciu
-    myStore.welcome();
-    cout<<endl;
-
-    //Wyświetlenie pełnych informacji o kliencie
-    myCust->showInfo();
-    myRev->showReview();
-
-    cout<<"\nCleaning up memory..."<<endl;
-    delete myCust;
-    delete myProd;
-    delete mySup;
-    delete myCat;
-    delete myUser;
-    delete myAddr;
-    delete basicPercDiscount;
-    delete tenPercDiscount;
-    delete myRev;
-
     return 0;
 }
