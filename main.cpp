@@ -41,7 +41,7 @@ class Address{
 };
 
 class User{
-    private:
+    protected:
         string name;
         string email;
     public:
@@ -59,9 +59,26 @@ class User{
         void setName(string name){this->name = name;}
         void setEmail(string email){this->email = email;}
 
-        ~User(){
+        virtual ~User(){
             cout<<"[Destruktor]: Usunieto profil uzytkownika: "<<this->name<<endl;
         }
+};
+
+class Admin : public User {
+private:
+    int permission_level;
+public:
+    Admin(string name, string email, int level) : User(name, email) {
+        this->permission_level = level;
+    }
+
+    ~Admin() {
+        cout << "[Destruktor]: Usunieto uprawnienia administracyjne poziomu: " << this->permission_level << endl;
+    }
+
+    void systemMaintenance() {
+        cout << "[System]: Administrator " << this->name << " rozpoczyna procedure konserwacji." << endl;
+    }
 };
 
 class Category{
@@ -118,7 +135,7 @@ class Supplier {
 };
 
 class Product {
-    private:
+    protected:
         string name;
         double price;
         Category* category;
@@ -143,10 +160,79 @@ class Product {
         void setCategory(Category* category){this->category = category;}
         void setSupplier(Supplier* supplier){this->supplier = supplier;}
 
-        ~Product(){
+        virtual ~Product(){
             cout<<"[Destruktor]: Usunieto produkt: "<<this->name<<endl;
         }
 };
+
+
+class Electronics : public Product {
+protected:
+    int warranty_period;
+public:
+    Electronics(string name, double price, int warranty) : Product(name, price) {
+        this->warranty_period = warranty;
+    }
+
+    virtual ~Electronics() {
+        cout << "[Destruktor]: Zakonczono cykl serwisowy dla elektroniki." << endl;
+    }
+};
+
+class Computer : public Electronics {
+protected:
+    string cpu_model;
+    int ram_amount;
+public:
+    Computer(string name, double price, int warranty, string cpu, int ram) 
+        : Electronics(name, price, warranty) {
+        this->cpu_model = cpu;
+        this->ram_amount = ram;
+    }
+
+    virtual ~Computer() {
+        cout << "[Destruktor]: Zarchiwizowano konfiguracje jednostki obliczeniowej." << endl;
+    }
+};
+
+class Laptop : public Computer {
+protected:
+    double screen_size;
+    int battery_life;
+public:
+    Laptop(string name, double price, int warranty, string cpu, int ram, double screen, int battery) 
+        : Computer(name, price, warranty, cpu, ram) {
+        this->screen_size = screen;
+        this->battery_life = battery;
+    }
+
+    virtual ~Laptop() {
+        cout << "[Destruktor]: Usunieto parametry mobilne urzadzenia." << endl;
+    }
+};
+
+class GamingLaptop : public Laptop {
+private:
+    string gpu_model;
+    int refresh_rate;
+public:
+    GamingLaptop(string name, double price, int warranty, string cpu, int ram, double screen, int battery, string gpu, int hz) 
+        : Laptop(name, price, warranty, cpu, ram, screen, battery) {
+        this->gpu_model = gpu;
+        this->refresh_rate = hz;
+    }
+
+    void displaySpecs() const {
+        cout << "--- SPECYFIKACJA LAPTOPA GAMINGOWEGO ---" << endl;
+        cout << "Model: " << this->name << " | Procesor: " << this->cpu_model << endl;
+        cout << "Grafika: " << this->gpu_model << " | Odswiezanie: " << this->refresh_rate << "Hz" << endl;
+    }
+
+    ~GamingLaptop() {
+        cout << "[Destruktor]: Usunieto konfiguracje wysokiej wydajnosci." << endl;
+    }
+};
+
 
 class Review{
     private:
@@ -347,49 +433,56 @@ void forceOrderStatus(Order& o, string newStatus) {
 }
 
 int main() {
-    //Stworzenie sklepu i powitanie
-    Store myStore("Allegro Lokalnie", true);
+    Store myStore("Tech-Premium", true);
     myStore.mainPage();
+    //Tworzenie obiektow
+    Category* cat = new Category("Sprzet Komputerowy", "Urzadzenia o wysokiej wydajnosci");
+    Supplier* sup = new Supplier("MSI Polska", "Poland");
 
-    //Przygotowanie danych
-    User* u = new User("Kacper", "kacper@mail.pl");
-    Address* a1 = new Address("Bydgoszcz", "Dluga 10");
-    Address* a2 = new Address("Bydgoszcz", "Krotka 2"); // drugi adres do porownania
+    // Tworzenie najbardziej wyspecjalizowanego obiektu
+    GamingLaptop* myGamingLaptop = new GamingLaptop(
+        "MSI Raider GE78", // Product::name
+        15500.0,           // Product::price
+        24,                // Electronics::warranty_period
+        "Intel i9-13980HX",// Computer::cpu_model
+        64,                // Computer::ram_amount
+        17.3,              // Laptop::screen_size
+        99,                // Laptop::battery_life
+        "RTX 4090",        // GamingLaptop::gpu_model
+        240                // GamingLaptop::refresh_rate
+    );
+    myGamingLaptop->setCategory(cat);
+    myGamingLaptop->setSupplier(sup);
     
-    Customer* cust = new Customer(u, a1);
-    DiscountCard* card = new DiscountCard(20);
-    Order* ord = new Order(123, "Pending");
+    // Wywołanie metody z poziomu 5, która korzysta z atrybutów poziomów 1 i 3
+    myGamingLaptop->displaySpecs();
+
+    Admin* sysAdmin = new Admin("Rafal", "admin@techpremium.pl", 10);
     
-    cust->setCard(card);
-    cust->setCurrentOrder(ord);
-
-    //Testowanie 5 funkcji zaprzyjaznionych
-    cout<<"\n--- TEST 5 FUNKCJI ZAPRZYJAZNIONYCH ---"<<endl;
+    // Wywołanie metody specyficznej dla klasy Admin, korzystającej z pola klasy User
+    sysAdmin->systemMaintenance();
     
-    //Funkcja 1: Porównanie miast 
-    compareCities(*a1, *a2); 
+    // Test funkcji zaprzyjaznionej korzystajacej z klasy nadrzednej (User)
+    printSensitiveData(*sysAdmin);
 
-    //Funkcja 2: Sprawdzenie czy opinia jest TOP 
-    Review rev(5, "Bardzo polecam!");
-    if(isTopRated(rev)) cout<<"Opinia zweryfikowana jako: TOP RATED"<<endl;
+    // TEST INTEGRACJI Z KLASA CUSTOMER
+    User* clientProfile = new User("Jan Kowalski", "j.kowalski@poczta.pl");
+    Address* clientAddr = new Address("Warszawa", "Marszalkowska 10");
+    Customer* client = new Customer(clientProfile, clientAddr);
+    
+    DiscountCard* goldCard = new DiscountCard(15);
+    client->setCard(goldCard);
+    
+    // Przetwarzanie platnosci za laptopa z wykorzystaniem dziedziczonej ceny
+    client->processPayment(myGamingLaptop->getPrice());
 
-    //Funkcja 3: Logi admina (dostęp do u.name i u.email)
-    printSensitiveData(*u);
-
-    //Funkcja 4: Reset rabatu przez admina (bezpośrednia zmiana dc.discount)
-    adminResetDiscount(*card);
-    cout<<"Rabat po interwencji admina: "<<card->getDiscount()<<"%"<<endl;
-
-    //Funkcja 5: Wymuszenie statusu zamówienia (zmiana o.status)
-    forceOrderStatus(*ord, "CANCELED_BY_ADMIN");
-    cout<<"Status zamowienia po wymuszeniu: " << ord->getStatus() << endl;
-
-    //4.Test Friend Class (Dostęp wewnatrz Customera)
-    cust->processPayment(200);
-
-    //sprzatanie
-    delete cust; // To usunie profil, adres, zamowienie i karte
-    delete a2;   // Ten adres nie byl w Customerze, usuwamy go osobno
+    //CZYSZCZENIE PAMIECI
+    delete client;          // Usuwa Customer, profil User i Address
+    delete myGamingLaptop;  // Wywoluje 5 destruktorow: GamingLaptop -> Laptop -> Computer -> Electronics -> Product
+    delete sysAdmin;        // Wywoluje 2 destruktory: Admin -> User
+    delete cat;             
+    delete sup;             
 
     return 0;
+    
 }
