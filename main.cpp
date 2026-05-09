@@ -3,6 +3,50 @@
 
 using namespace std;
 
+//--------------KLASY ABSTRAKCYJNE--------------------
+
+class BaseProfile {
+public:
+    virtual void login() = 0;
+    virtual void logout() = 0;
+    virtual bool validateEmail() = 0;
+    virtual void updateLastActivity() = 0;
+    virtual string getSecurityStatus() = 0;
+    virtual ~BaseProfile() = default;
+};
+
+class BaseMarketItem {
+public:
+    virtual void applyPromotion(double percentage) = 0;
+    virtual void updateStock(int amount) = 0;
+    virtual double calculateTax() = 0;
+    virtual bool isAvailable() = 0;
+    virtual void logPriceChange() = 0;
+    virtual ~BaseMarketItem() = default;
+};
+
+class BaseBusinessProcess {
+public:
+    virtual void startProcess() = 0;
+    virtual void cancelProcess() = 0;
+    virtual void completeProcess() = 0;
+    virtual string getProcessLog() = 0;
+    virtual int getEstimatedTime() = 0;
+    virtual ~BaseBusinessProcess() = default;
+};
+
+class BasePaymentMethod {
+public:
+    virtual bool authorize(double amount) = 0;
+    virtual bool capture(double amount) = 0;
+    virtual bool refund(double amount) = 0;
+    virtual string getProviderName() = 0;
+    virtual bool isSecure() = 0;
+    virtual ~BasePaymentMethod() = default;
+};
+
+
+
 class Address; 
 class Review; 
 class DiscountCard; 
@@ -40,14 +84,16 @@ class Address{
         }
 };
 
-class User{
+class User : public BaseProfile {
     protected:
         string name;
         string email;
+        int activity;
     public:
-        User(string name="guest", string email="not_provided"){
+        User(string name="guest", string email="not_provided", int activity = 0){
             this->name = name;
             this->email = email;
+            this->activity = activity;
         }
 
         friend class Customer;
@@ -59,7 +105,31 @@ class User{
         void setName(string name){this->name = name;}
         void setEmail(string email){this->email = email;}
 
-        virtual ~User(){
+        //5 metod z BaseProfile
+        void login() override {
+            cout << "Zalogowano! Witaj " << this->name << endl;
+        }
+        void logout() override {
+            cout << "Wylogowano! Do nastepnego! " << this->name << endl;
+        }
+        bool validateEmail() override {
+            if (this->email.find('@') != string::npos) {
+                cout << "Wprowadzono poprawny email!" << endl;
+                return true;
+            } else {
+                cout << "Wprowadzono niepoprawny email!" << endl;
+                return false;
+            }
+        }
+        void updateLastActivity() override {
+            cout << "Zaktualizowano twoja aktywnosc" << endl;
+            this->activity += 1;
+        }
+        string getSecurityStatus() override {
+            return "Level: Standard"; 
+        }
+
+        ~User(){
             cout<<"[Destruktor]: Usunieto profil uzytkownika: "<<this->name<<endl;
         }
 };
@@ -68,7 +138,7 @@ class Admin : public User {
 private:
     int permission_level;
 public:
-    Admin(string name, string email, int level) : User(name, email) {
+    Admin(string name, string email, int level) : User(name, email, 0) {
         this->permission_level = level;
     }
 
@@ -134,7 +204,7 @@ class Supplier {
         }
 };
 
-class Product {
+class Product : public BaseMarketItem{
     protected:
         string name;
         double price;
@@ -160,7 +230,30 @@ class Product {
         void setCategory(Category* category){this->category = category;}
         void setSupplier(Supplier* supplier){this->supplier = supplier;}
 
-        virtual ~Product(){
+        //--------------KLASY ABSTRAKCYJNE----------------
+        virtual void applyPromotion(double percentage) override {
+            if (percentage < 100 && percentage > 0) {
+                this->price -= (this->price * percentage/100 );
+            } else {
+                cout << "Nie przeceniono poniewaz wprowadzono zly format"<<endl;
+            }
+        }
+        virtual void updateStock(int amount) override {
+            cout << "[Product]: Zmiana stanu o " << amount << endl; 
+
+        }
+        virtual double calculateTax() override {
+            return this->price * 0.23; 
+
+        }
+        virtual bool isAvailable() override {
+            return price > 0;
+        }
+        virtual void logPriceChange() override {
+            cout << "[Log]: Cena produktu " << this->name << " ulegla zmianie." << endl;
+        }
+
+        ~Product(){
             cout<<"[Destruktor]: Usunieto produkt: "<<this->name<<endl;
         }
 };
@@ -174,7 +267,7 @@ public:
         this->warranty_period = warranty;
     }
 
-    virtual ~Electronics() {
+    ~Electronics() {
         cout << "[Destruktor]: Zakonczono cykl serwisowy dla elektroniki." << endl;
     }
 };
@@ -190,7 +283,7 @@ public:
         this->ram_amount = ram;
     }
 
-    virtual ~Computer() {
+    ~Computer() {
         cout << "[Destruktor]: Zarchiwizowano konfiguracje jednostki obliczeniowej." << endl;
     }
 };
@@ -206,7 +299,7 @@ public:
         this->battery_life = battery;
     }
 
-    virtual ~Laptop() {
+    ~Laptop() {
         cout << "[Destruktor]: Usunieto parametry mobilne urzadzenia." << endl;
     }
 };
@@ -269,7 +362,7 @@ class Review{
         }
 };
 
-class Order{
+class Order : public BaseBusinessProcess{
     private:
         int id;
         string status;
@@ -297,10 +390,81 @@ class Order{
         return false;
         }
 
+        //-------------------------------------------------------
+        void startProcess() override { 
+            status = "Processing"; 
+        }
+        void cancelProcess() override { 
+            status = "Cancelled"; 
+        }
+        void completeProcess() override { 
+            status = "Completed"; 
+        }
+        string getProcessLog() override { 
+            return "Order ID: " + to_string(id) + " is " + status; 
+        }
+        int getEstimatedTime() override { return 48; }
+
         ~Order(){
             cout<<"[Destruktor]: Usunieto zamowienie nr: "<<this->id<<endl;
         }
 
+};
+
+class BlikPayment : public BasePaymentMethod {
+private:
+    string phoneNumber;
+    bool authorized;
+public:
+    BlikPayment(string phoneNumber = "000-000-000") {
+        this->phoneNumber = phoneNumber;
+        this->authorized = false;
+    }
+
+    bool authorize(double amount) override {
+        if (amount <= 0.0) {
+            cout << "[BLIK]: Bledna kwota do autoryzacji." << endl;
+            authorized = false;
+            return false;
+        }
+        cout << "[BLIK]: Autoryzacja kwoty PLN " << amount << " dla numeru " << phoneNumber << endl;
+        authorized = true;
+        return true;
+    }
+
+    bool capture(double amount) override {
+        if (!authorized) {
+            cout << "[BLIK]: Nie mozna pobrac srodkow - brak autoryzacji." << endl;
+            return false;
+        }
+        if (amount <= 0.0) {
+            cout << "[BLIK]: Bledna kwota do pobrania." << endl;
+            return false;
+        }
+        cout << "[BLIK]: Pobrano PLN " << amount << endl;
+        return true;
+    }
+
+    bool refund(double amount) override {
+        if (amount <= 0.0) {
+            cout << "[BLIK]: Bledna kwota zwrotu." << endl;
+            return false;
+        }
+        cout << "[BLIK]: Zwrot PLN " << amount << " na numer " << phoneNumber << endl;
+        return true;
+    }
+
+    string getProviderName() override {
+        return "BLIK";
+    }
+
+    bool isSecure() override {
+        return true;
+    }
+
+    ~BlikPayment() {
+        cout << "[Destruktor]: Zakonczono sesje platnosci BLIK." << endl;
+    }
 };
 
 class DiscountCard {
@@ -405,6 +569,7 @@ public:
             cout<<"Niesety jestesmy zamknieci :("<<endl;
         }
     }
+    
 
     ~Store() {
         cout<<"[Destruktor]: Zamykanie systemu sklepu " << this->name<< endl;
@@ -466,7 +631,7 @@ int main() {
     printSensitiveData(*sysAdmin);
 
     // TEST INTEGRACJI Z KLASA CUSTOMER
-    User* clientProfile = new User("Jan Kowalski", "j.kowalski@poczta.pl");
+    User* clientProfile = new User("Jan Kowalski", "j.kowalski@poczta.pl", 0);
     Address* clientAddr = new Address("Warszawa", "Marszalkowska 10");
     Customer* client = new Customer(clientProfile, clientAddr);
     
@@ -476,12 +641,21 @@ int main() {
     // Przetwarzanie platnosci za laptopa z wykorzystaniem dziedziczonej ceny
     client->processPayment(myGamingLaptop->getPrice());
 
+    // Test nowej abstrakcji BasePaymentMethod + klasy dziedziczacej
+    BasePaymentMethod* payment = new BlikPayment("501-200-300");
+    payment->authorize(myGamingLaptop->getPrice());
+    payment->capture(myGamingLaptop->getPrice());
+    payment->refund(100.0);
+    cout << "[Platnosc]: Provider = " << payment->getProviderName()
+         << " | secure = " << (payment->isSecure() ? "tak" : "nie") << endl;
+
     //CZYSZCZENIE PAMIECI
     delete client;          // Usuwa Customer, profil User i Address
     delete myGamingLaptop;  // Wywoluje 5 destruktorow: GamingLaptop -> Laptop -> Computer -> Electronics -> Product
     delete sysAdmin;        // Wywoluje 2 destruktory: Admin -> User
     delete cat;             
-    delete sup;             
+    delete sup;
+    delete payment;
 
     return 0;
     
